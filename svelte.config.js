@@ -13,8 +13,9 @@ const config = {
     // See https://kit.svelte.dev/docs/adapters for more information about adapters.
     adapter: adapter({
       routes: {
+        // hack to allow static html files to be served
         include: ['/', '/er/*'],
-        exclude: ['<all>']
+        exclude: ['<all>'],
       },
     }),
   },

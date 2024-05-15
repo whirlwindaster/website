@@ -24,8 +24,7 @@ export default async function* cat(env: environment, args: string[]) {
     if (!entry) {
       yield `cat: ${path}: No such file or directory<br>`;
       status = 1;
-    }
-    else {
+    } else {
       const tokens = path.split('/');
       if (FILE_TYPES.some((type) => path.endsWith(type))) {
         if (path.endsWith('.html')) {
@@ -35,17 +34,14 @@ export default async function* cat(env: environment, args: string[]) {
               throw response.status;
             }
             yield await response.text();
-          }
-          catch {
+          } catch {
             yield `cat: ${path}: Could not retrieve file<br>`;
           }
-        }
-        else {
+        } else {
           yield `redirecting you to ${entry.path}`;
           window.open(entry.path, '_blank')?.focus();
         }
-      }
-      else {
+      } else {
         const url = `https://${tokens[tokens.length - 1]}`;
         yield `redirecting you to ${url}`;
         window.open(url, '_blank')?.focus();
