@@ -20,7 +20,7 @@ export default function getProgram(name: string) {
     return programs.get(name)!;
   }
 
-  return async function* () {
+  return async function*() {
     yield `ash: command not found: ${name}`;
     return 1;
   };

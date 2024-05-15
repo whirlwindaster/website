@@ -6,7 +6,7 @@ export default async function* cat(env: environment, args: string[]) {
     return 1;
   }
 
-  const FILE_TYPES = ['.pdf', 'png'];
+  const FILE_TYPES = ['.html', '.pdf', 'png'];
 
   const paths: string[] = [];
   let status = 0;
@@ -24,24 +24,31 @@ export default async function* cat(env: environment, args: string[]) {
     if (!entry) {
       yield `cat: ${path}: No such file or directory<br>`;
       status = 1;
-    } else {
-      if (!entry.path.endsWith('.html')) {
-        const tokens = path.split('/');
-        const url = FILE_TYPES.some((type) => tokens[tokens.length - 1].endsWith(type))
-          ? tokens[tokens.length - 1]
-          : `https://${tokens[tokens.length - 1]}`;
-        yield `redirecting you to ${url}<br>`;
-        window.open(url, '_blank')?.focus();
-      } else {
-        try {
-          const response = await fetch(entry.path);
-          if (response.status > 399) {
-            throw response.status;
+    }
+    else {
+      const tokens = path.split('/');
+      if (FILE_TYPES.some((type) => path.endsWith(type))) {
+        if (path.endsWith('.html')) {
+          try {
+            const response = await fetch(entry.path);
+            if (response.status > 399) {
+              throw response.status;
+            }
+            yield await response.text();
           }
-          yield await response.text();
-        } catch {
-          yield `cat: ${path}: Could not retrieve file<br>`;
+          catch {
+            yield `cat: ${path}: Could not retrieve file<br>`;
+          }
         }
+        else {
+          yield `redirecting you to ${entry.path}`;
+          window.open(entry.path, '_blank')?.focus();
+        }
+      }
+      else {
+        const url = `https://${tokens[tokens.length - 1]}`;
+        yield `redirecting you to ${url}`;
+        window.open(url, '_blank')?.focus();
       }
     }
   }
