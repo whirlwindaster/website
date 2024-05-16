@@ -1,4 +1,4 @@
-import { getDirEntry } from '.';
+import { getDirEntry, parsePath } from '../share';
 
 export default async function* cd(env: environment, args: string[]) {
   if (args.length > 1) {
@@ -9,10 +9,14 @@ export default async function* cd(env: environment, args: string[]) {
     return 0;
   }
 
-  const newwd = getDirEntry(args[0], env.cwd);
+  const newwd = getDirEntry(parsePath(args[0]), env.cwd);
 
   if (!newwd) {
-    yield `cd: no such file or directory: ${args[0]}`;
+    yield `cd: ${args[0]}: No such file or directory`;
+    return 1;
+  }
+  if (newwd.kind == 'file') {
+    yield `cd: ${args[0]}: Not a directory`
     return 1;
   }
 

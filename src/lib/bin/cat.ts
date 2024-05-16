@@ -1,4 +1,4 @@
-import { getDirEntry } from '.';
+import { getDirEntry, parsePath } from '../share';
 
 export default async function* cat(env: environment, args: string[]) {
   if (args.length == 0) {
@@ -20,7 +20,7 @@ export default async function* cat(env: environment, args: string[]) {
   }
 
   for (const path of paths) {
-    const entry = getDirEntry(path, env.cwd);
+    const entry = getDirEntry(parsePath(path), env.cwd);
     if (!entry) {
       yield `cat: ${path}: No such file or directory<br>`;
       status = 1;

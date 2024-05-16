@@ -1,4 +1,4 @@
-import { getDirEntry } from '.';
+import { getDirEntry, parsePath } from '../share';
 
 export default async function* ls(env: environment, args: string[]) {
   let omissionLevel = 2;
@@ -23,7 +23,7 @@ export default async function* ls(env: environment, args: string[]) {
     entries.push(env.cwd);
   } else {
     for (const path of paths) {
-      const entry = getDirEntry(path, env.cwd);
+      const entry = getDirEntry(parsePath(path), env.cwd);
       if (entry) {
         entries.push(entry);
       } else {
@@ -47,7 +47,6 @@ export default async function* ls(env: environment, args: string[]) {
   if (paths.length < 2) {
     yield `${[...entries[0].entries.keys()].filter(filter).sort().join(' ').trim()}`;
   } else {
-    // TODO handle case where entry is file
     for (const [i, entry] of entries.entries()) {
       if (i == 0) {
         yield `${paths[i]}:<br>
