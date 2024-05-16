@@ -17,6 +17,9 @@ function makeDirEntry(
     out.entries.set('.', out);
     out.entries.set('..', parent ? parent : out);
   }
+  else {
+    out.entries.set(name, out);
+  }
 
   return out;
 }

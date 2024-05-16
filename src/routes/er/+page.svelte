@@ -1,6 +1,6 @@
 <script lang="ts">
   import getProgram, { programs } from '$lib/bin';
-  import { parseCommand } from '$lib/helpers';
+  import { HOME_DIR, getDirEntry, parseCommand, last, parsePath } from '$lib/share';
   import { onMount } from 'svelte';
   import type { PageData } from './$types';
   export let data: PageData;
@@ -19,11 +19,16 @@
   let execHistory: executionRecord[] = [];
 
   onMount(() => {
-    const commandLine = document.getElementById('commandline')!;
-    document.addEventListener('click', () => {
-      commandLine.focus();
-    });
-    commandLine.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+    const commandLine = document.getElementById('commandline');
+    const focusCommandLine = () => {
+      commandLine?.focus();
+    };
+    document.addEventListener('click', focusCommandLine);
+    commandLine?.dispatchEvent(new KeyboardEvent('keydown', { key: 'Enter' }));
+
+    return () => {
+      document.removeEventListener('click', focusCommandLine);
+    };
   });
 
   function dispatchKeyHandler(event: KeyboardEvent) {
@@ -36,22 +41,41 @@
         event.preventDefault();
         tabComplete();
         break;
+      case 'ArrowUp':
+        event.preventDefault();
+        getPrevious();
+        break;
     }
+  }
+
+  function getPrevious() {
+    input = execHistory[execHistory.length - 1]?.input || '';
   }
 
   function tabComplete() {
     const completions: string[] = [];
-    const parsed = input.split(' ');
-    if (parsed.length === 0) return;
+    const tokens = input.trimStart().split(' ');
+    if (tokens.length === 0) return;
 
-    if (parsed.length > 1) {
+    if (tokens.length > 1) {
+      // complete with directory entries, filtering . and ..
+      const components = parsePath(last(tokens));
+      const parent = components.slice(0, components.length - 1);
+      const searchDir = getDirEntry(parent, env.cwd);
+      if (!searchDir) return;
       completions.push(
-        ...[...env.cwd.entries.keys()].filter(
-          (k) => !k.startsWith('.') && k.startsWith(parsed[parsed.length - 1]),
-        ),
+        ...[...searchDir.entries.keys()]
+          .filter((c) => c !== '.' && c !== '..' && c.startsWith(last(components) || ''))
+          .map(
+            (c) =>
+              `${parent.join('/')}${parent.length > 0 ? '/' : ''}${c}${searchDir.entries.get(c)!.kind == 'dir' ? '/' : ' '}`,
+          ),
       );
     } else {
-      completions.push(...[...programs.keys()].filter((k) => k.startsWith(parsed[0])));
+      // complete with commands
+      completions.push(
+        ...[...programs.keys()].filter((k) => k.startsWith(tokens[0])).map((c) => `${c} `),
+      );
     }
     completions.sort();
 
@@ -62,12 +86,19 @@
           exitCode: parseInt(env.variables.get('?') || '0'),
           dir: env.cwd.path,
           input: input,
-          output: completions.join(' ').concat('<br>'),
+          // TODO better spacing
+          output: completions
+            .map((c) => c.substring(c.lastIndexOf('/') + 1))
+            .join(' ')
+            .concat('<br>'),
         },
       ];
     } else if (completions.length === 1) {
-      parsed[parsed.length - 1] = completions[0];
-      input = parsed.join(' ').concat(' ');
+      if (!completions[0].startsWith(last(tokens))) {
+        tokens[tokens.length - 1] = last(tokens).concat(completions[0]);
+      }
+      tokens[tokens.length - 1] = completions[0];
+      input = tokens.join(' ');
     }
   }
 
@@ -110,8 +141,8 @@
       return '/';
     }
 
-    if (path.startsWith('/home/user')) {
-      return path.replace('/home/user', '~');
+    if (path.startsWith(HOME_DIR)) {
+      return path.replace(HOME_DIR, '~');
     }
 
     return path;
@@ -146,17 +177,15 @@
     {:else}
       <span class="text-green font-medium">✽</span>
     {/if}
-    {#if submitted}
-      <div>
-        <!-- eslint-disable-next-line svelte/no-at-html-tags -->
-        {@html output}
-      </div>
-    {/if}
     <input
       id="commandline"
-      class="text-inherit bg-inherit border-none focus:outline-none"
+      class="text-inherit bg-inherit w-8/12 border-none focus:outline-none"
       bind:value={input}
       on:keydown|capture={dispatchKeyHandler}
     />
+    <div>
+      <!-- eslint-disable-next-line svelte/no-at-html-tags -->
+      {@html output}
+    </div>
   </div>
 </div>
