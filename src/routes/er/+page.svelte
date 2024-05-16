@@ -15,7 +15,6 @@
   let env = data;
   let input = 'neofetch';
   let output = '';
-  let submitted = false;
   let execHistory: executionRecord[] = [];
 
   onMount(() => {
