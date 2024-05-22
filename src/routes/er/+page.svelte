@@ -16,6 +16,8 @@
   let input = 'neofetch';
   let output = '';
   let execHistory: executionRecord[] = [];
+  const cmdHistory: string[] = ['neofetch'];
+  let historyPtr = cmdHistory.length - 1;
 
   onMount(() => {
     const commandLine = document.getElementById('commandline');
@@ -44,11 +46,21 @@
         event.preventDefault();
         getPrevious();
         break;
+      case 'ArrowDown':
+        event.preventDefault();
+        getNext();
+        break;
     }
   }
 
   function getPrevious() {
-    input = execHistory[execHistory.length - 1]?.input || '';
+    input = historyPtr > 0 ? cmdHistory[--historyPtr] : cmdHistory[historyPtr];
+  }
+
+  function getNext() {
+    input =
+      (historyPtr < cmdHistory.length - 1 ? cmdHistory[++historyPtr] : cmdHistory[historyPtr]) ||
+      '';
   }
 
   function tabComplete() {
@@ -87,6 +99,9 @@
           input: input,
           // TODO better spacing
           output: completions
+            // trim postfix slash
+            .map((c) => (c.endsWith('/') ? c.substring(0, c.length - 1) : c))
+            // trim any prefix slashes
             .map((c) => c.substring(c.lastIndexOf('/') + 1))
             .join(' ')
             .concat('<br>'),
@@ -103,20 +118,29 @@
 
   async function submitCommand() {
     const parsed = parseCommand(input);
-    const oldEnv: [number, string] = [parseInt(env.variables.get('?') || '0'), env.cwd.path];
-    await execute(getProgram(parsed.name), parsed.args);
-    env = env;
+    if (parsed.name !== 'clear') {
+      const oldEnv: [number, string] = [parseInt(env.variables.get('?') || '0'), env.cwd.path];
+      await execute(getProgram(parsed.name), parsed.args);
+      env = env;
 
-    execHistory = [
-      ...execHistory,
-      {
-        exitCode: oldEnv[0],
-        dir: oldEnv[1],
-        input: input,
-        output: output,
-      },
-    ];
+      execHistory = [
+        ...execHistory,
+        {
+          exitCode: oldEnv[0],
+          dir: oldEnv[1],
+          input: input,
+          output: output,
+        },
+      ];
+    } else {
+      env.variables.set('?', '0');
+      env = env;
+      execHistory = [];
+    }
 
+    cmdHistory[cmdHistory.length - 1] = input;
+    cmdHistory.push('');
+    historyPtr = cmdHistory.length - 1;
     input = '';
     output = '';
     document.getElementById('commandline')?.focus();
@@ -180,6 +204,9 @@
       id="commandline"
       class="text-inherit bg-inherit w-8/12 border-none focus:outline-none"
       bind:value={input}
+      on:input={() => {
+        cmdHistory[historyPtr] = input;
+      }}
       on:keydown|capture={dispatchKeyHandler}
     />
     <div>

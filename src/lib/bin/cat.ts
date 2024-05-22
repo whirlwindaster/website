@@ -38,7 +38,7 @@ export default async function* cat(env: environment, args: string[]) {
             yield `cat: ${path}: Could not retrieve file<br>`;
           }
         } else {
-          yield `redirecting you to ${entry.path}`;
+          yield `taking you to ${entry.path}`;
           window.open(entry.path, '_blank')?.focus();
         }
       } else {

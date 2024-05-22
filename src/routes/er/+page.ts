@@ -32,22 +32,12 @@ export const load: PageLoad = () => {
     .get('home')!
     .entries.set('user', makeDirEntry('user', 'dir', root.entries.get('home')!));
 
-  root.entries.set('usr', makeDirEntry('usr', 'dir', root));
-  root.entries.get('usr')!.entries.set('bin', makeDirEntry('bin', 'dir', root.entries.get('usr')!));
-
   const userHome = root.entries.get('home')!.entries.get('user')!;
   userHome.entries.set('example.html', makeDirEntry('example.html', 'file', userHome));
   userHome.entries.set(
     'dd.whirlwinda.st',
     makeDirEntry('dd.whirlwinda.st', 'file', userHome, true),
   );
-
-  const bin = root.entries.get('usr')!.entries.get('bin')!;
-  bin.entries.set('cat', makeDirEntry('cat', 'file', bin));
-  bin.entries.set('cd', makeDirEntry('cd', 'file', bin));
-  bin.entries.set('help', makeDirEntry('help', 'file', bin));
-  bin.entries.set('ls', makeDirEntry('ls', 'file', bin));
-  bin.entries.set('neofetch', makeDirEntry('neofetch', 'file', bin));
 
   const env = {
     variables: new Map<string, string>([['?', '0']]),
